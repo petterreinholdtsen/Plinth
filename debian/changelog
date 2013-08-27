@@ -1,0 +1,5 @@
+plinth (0.3.0.0.git.20130626-1) UNRELEASED; urgency=low
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Tzafrir Cohen <tzafrir@debian.org>  Tue, 27 Aug 2013 15:38:50 +0300

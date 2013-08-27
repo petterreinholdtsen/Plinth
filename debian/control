@@ -1,0 +1,31 @@
+Source: plinth
+Section: python
+Priority: extra
+Maintainer: Tzafrir Cohen <tzafrir@debian.org>
+#Uploaders: 
+Build-Depends: debhelper (>= 9), python-all, python-cheetah, pandoc
+Standards-Version: 3.9.4
+Homepage: http://wiki.debian.org/Freedombox
+#Vcs-Git: 
+#Vcs-Browser: 
+
+Package: plinth
+Section: python
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends},
+ python-withsqlite, python-exmachina,
+ augeas-tools,
+# FIXME: isn't python-simplejson now part of python?
+ python-simplejson,
+ python-cheetah,
+ python-cherrypy3
+Description: a web front end for administering every aspect of a Freedom Box
+ The Freedom Box is a net appliance conceived by Eben Moglen.  It
+ contains free software and is designed to allow you to interface with
+ the rest of the net under conditions of protected privacy and data
+ security.
+ .
+ The Plinth front end is a web interface to administer the functions of
+ the Freedom Box.  For example, the Freedom Box is a wireless router,
+ and the front end is where you can adjust its settings.
+

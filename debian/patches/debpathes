@@ -1,0 +1,16 @@
+Author: Tzafrir Cohen <tzafrir@debian.org>
+Description: Pathes that match Debian packaging
+
+--- a/share/init.d/plinth
++++ b/share/init.d/plinth
+@@ -11,8 +11,8 @@
+ ### END INIT INFO
+ 
+ # This file is /etc/init.d/plinth
+-DAEMON=/usr/local/bin/plinth.py
+-EXMACHINA_DAEMON=/usr/local/bin/exmachina.py
++DAEMON=/usr/bin/plinth
++EXMACHINA_DAEMON=/usr/share/pyshared/exmachina/exmachina.py
+ PID_FILE=/var/run/plinth.pid
+ EXMACHINA_PID_FILE=/var/run/exmachina.pid
+ 
