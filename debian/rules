@@ -2,10 +2,10 @@
 %:
 	dh $@ --with python2
 
-PYDIR=$(CURDIR)/debian/plinth/usr/lib/python2.7/plinth
+DATADIR=$(CURDIR)/debian/plinth/usr/share/plinth
 override_dh_auto_install:
 	dh_auto_install
-	find $(PYDIR) -name \*.png -o -name \*.svg | xargs chmod -x
+	find $(DATADIR) -name \*.png -o -name \*.svg | xargs chmod -x
 
 override_dh_installinit:
 	dh_installinit --onlyscripts
