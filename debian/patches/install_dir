@@ -1,5 +1,10 @@
 Author: Tzafrir Cohen <tzafrir@debian.org>
-Description: Separate directories for code and data.
+Description: These things are easier to install with dh
+
+* Python modules: fighting with dh_python2 is tough
+  (it changes the /etc/ symlink, for isntance)
+* Let's just install man pages ourselves for now.
+* symlinks: with dh_link
 
 --- a/Makefile
 +++ b/Makefile
@@ -7,21 +12,21 @@ Description: Separate directories for code and data.
  SLEEP_TIME=300
  EXCLUDE=--exclude=*.tar.gz --exclude=*~ $(EXCLUDE-FILES)
  ALL_BUT_GZ=$(subst $(wildcard *.tar.gz),,$(wildcard *))
-+PYDIR=/usr/lib/python2.7/dist-packages/plinth
 +DATADIR=/usr/share/plinth
++PYDIR=$(DATADIR)/python/plinth
  
  ## Catch-all tagets
  default: config dirs template css docs dbs
-@@ -23,21 +25,17 @@ predepend:
+@@ -23,21 +25,12 @@ predepend:
  install: default
  	mkdir -p $(DESTDIR)/etc/init.d $(DESTDIR)/etc/plinth
  	cp plinth.sample.fhs.config $(DESTDIR)/etc/plinth/plinth.config
 -	mkdir -p $(DESTDIR)/usr/lib/python2.7/plinth $(DESTDIR)/usr/bin \
 +	mkdir -p $(DESTDIR)$(PYDIR) $(DESTDIR)$(DATADIR) $(DESTDIR)/usr/bin \
  		$(DESTDIR)/usr/share/doc/plinth $(DESTDIR)/usr/share/man/man1
- 	rsync -L doc/* $(DESTDIR)/usr/share/doc/plinth/
- 	gzip $(DESTDIR)/usr/share/doc/plinth/plinth.1 
- 	mv $(DESTDIR)/usr/share/doc/plinth/plinth.1.gz $(DESTDIR)/usr/share/man/man1
+-	rsync -L doc/* $(DESTDIR)/usr/share/doc/plinth/
+-	gzip $(DESTDIR)/usr/share/doc/plinth/plinth.1 
+-	mv $(DESTDIR)/usr/share/doc/plinth/plinth.1.gz $(DESTDIR)/usr/share/man/man1
 -	rsync -rl *.py modules templates vendor themes static \
 -		--exclude static/doc --exclude ".git/*" --exclude "*.pyc" \
 -		$(DESTDIR)/usr/lib/python2.7/plinth
@@ -29,24 +34,60 @@ Description: Separate directories for code and data.
 -	cp doc/*.html $(DESTDIR)/usr/lib/python2.7/plinth/static/doc
 -	rm -f $(DESTDIR)/usr/lib/python2.7/plinth/plinth.config
 -	ln -s ../../../../etc/plinth/plinth.config $(DESTDIR)/usr/lib/python2.7/plinth/plinth.config
-+	cp -a *.py modules templates $(DESTDIR)$(PYDIR)/
 +	cp -a static themes $(DESTDIR)$(DATADIR)/
-+	ln -s ../../../../etc/plinth/plinth.config $(DESTDIR)$(PYDIR)/plinth.config
++	cp -a *.py modules templates $(DESTDIR)$(PYDIR)/
  	cp share/init.d/plinth $(DESTDIR)/etc/init.d
- 	rm -f $(DESTDIR)/usr/bin/plinth
+-	rm -f $(DESTDIR)/usr/bin/plinth
 -	ln -s ../lib/python2.7/plinth/plinth.py $(DESTDIR)/usr/bin/plinth
-+	ln -s ../lib/python2.7/dist-packages/plinth/plinth.py $(DESTDIR)/usr/bin/plinth
++	install plinth $(DESTDIR)/usr/bin/
  	mkdir -p $(DESTDIR)/var/lib/plinth/cherrypy_sessions $(DESTDIR)/var/log/plinth $(DESTDIR)/var/run
  	cp -r data/* $(DESTDIR)/var/lib/plinth
  	rm -f $(DESTDIR)/var/lib/plinth/users/sqlite3.distrib
 --- a/plinth.sample.fhs.config
 +++ b/plinth.sample.fhs.config
-@@ -3,7 +3,7 @@ product_name = Plinth
+@@ -3,7 +3,8 @@ product_name = Plinth
  box_name = FreedomBox
  
  [Path]
 -file_root = /usr/lib/python2.7/plinth
 +file_root = /usr/share/plinth/static
++python_root = /usr/share/plinth/python/plinth
  data_dir = /var/lib/plinth
  store_file = %(data_dir)s/store.sqlite3
  user_db = %(data_dir)s/users
+--- /dev/null
++++ b/plinth
+@@ -0,0 +1,4 @@
++#!/bin/sh
++
++export PYTHONPATH=/usr/share/plinth/python
++exec python /usr/share/plinth/python/plinth/plinth.py "$@"
+--- a/cfg.py
++++ b/cfg.py
+@@ -8,6 +8,7 @@ parser = SafeConfigParser(
+         'product_name':"",
+         'box_name':"",
+         'file_root':"",
++        'python_root':"",
+         'data_dir':"",
+         'store_file':"",
+         'user_db':"",
+@@ -24,6 +25,7 @@ product_name = parser.get('Name', 'produ
+ box_name = parser.get('Name', 'box_name')
+ root = parser.get('Path', 'root')
+ file_root = parser.get('Path', 'file_root')
++python_root = parser.get('Path', 'python_root')
+ data_dir = parser.get('Path', 'data_dir')
+ store_file = parser.get('Path', 'store_file')
+ user_db = parser.get('Path', 'user_db')
+--- a/plinth.py
++++ b/plinth.py
+@@ -125,7 +125,7 @@ def setup():
+          cfg.exmachina = None
+          print "couldn't connect to exmachina daemon, but continuing anyways..."
+ 
+-   os.chdir(cfg.file_root)
++   os.chdir(cfg.python_root)
+    cherrypy.config.update({'error_page.404': error_page_404})
+    cherrypy.config.update({'error_page.500': error_page_500})
+    cfg.log = Logger()
