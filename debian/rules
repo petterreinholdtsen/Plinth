@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 %:
-	dh $@ --with python2
+	dh $@ --with quilt --with python2
 
 DATADIR=$(CURDIR)/debian/plinth/usr/share/plinth
 override_dh_auto_install:
