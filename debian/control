@@ -2,7 +2,9 @@ Source: plinth
 Section: python
 Priority: extra
 Maintainer: Tzafrir Cohen <tzafrir@debian.org>
-#Uploaders: 
+Uploaders: Jonas Smedegaard <dr@jones.dk>,
+ Piotr Ożarowski <piotr@debian.org>,
+ Petter Reinholdtsen <pere@debian.org
 Build-Depends: debhelper (>= 9), quilt, python-all, python-cheetah, pandoc
 Standards-Version: 3.9.4
 Homepage: http://wiki.debian.org/Freedombox
