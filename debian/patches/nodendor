@@ -1,0 +1,48 @@
+Author: Tzafrir Cohen <tzafrir@debian.org>
+Description: "vendor" packages are installed as separate system debs
+
+--- a/Makefile
++++ b/Makefile
+@@ -11,7 +11,7 @@ EXCLUDE=--exclude=*.tar.gz --exclude=*~
+ ALL_BUT_GZ=$(subst $(wildcard *.tar.gz),,$(wildcard *))
+ 
+ ## Catch-all tagets
+-default: predepend config dirs template css docs dbs
++default: config dirs template css docs dbs
+ all: default
+ 
+ predepend:
+--- a/plinth.py
++++ b/plinth.py
+@@ -17,8 +17,8 @@ import util as u
+ from logger import Logger
+ #from modules.auth import AuthController, require, member_of, name_is
+ 
+-from vendor.withsqlite.withsqlite import sqlite_db
+-from vendor.exmachina.exmachina import ExMachinaClient
++from withsqlite.withsqlite import sqlite_db
++from exmachina.exmachina import ExMachinaClient
+ import socket
+ 
+ __version__ = "0.2.14"
+--- a/start.sh
++++ b/start.sh
+@@ -5,6 +5,6 @@
+ export PYTHONPATH
+ 
+ sudo killall exmachina.py
+-sudo vendor/exmachina/exmachina.py -v &
++sudo /usr/share/pyshared/exmachina/exmachina.py -v &
+ python plinth.py
+ sudo killall exmachina.py
+--- a/modules/installed/first_boot.py
++++ b/modules/installed/first_boot.py
+@@ -5,7 +5,7 @@ from plugin_mount import PagePlugin, Plu
+ from modules.auth import require
+ from forms import Form
+ import util as u
+-from vendor.withsqlite.withsqlite import sqlite_db
++from withsqlite.withsqlite import sqlite_db
+ import cfg
+ 
+ class FirstBoot(PagePlugin):

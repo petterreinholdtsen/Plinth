@@ -1,0 +1,5 @@
+/files
+/plinth.debhelper.log
+/*.debhelper
+/plinth.substvars
+/plinth/
