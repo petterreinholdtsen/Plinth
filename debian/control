@@ -19,7 +19,7 @@ Depends: ${python:Depends}, ${misc:Depends},
  python-simplejson,
  python-cheetah,
  python-cherrypy3
-Description: a web front end for administering every aspect of a Freedom Box
+Description: web front end for administering every aspect of a Freedom Box
  The Freedom Box is a net appliance conceived by Eben Moglen.  It
  contains free software and is designed to allow you to interface with
  the rest of the net under conditions of protected privacy and data
