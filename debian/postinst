@@ -2,9 +2,14 @@
 
 set -e
 
+daemonuser=plinth
+daemongroup=plinth
+
 case "$1" in
 configure)
-	chown -R www-data: /var/lib/plinth /var/log/plinth
+	addgroup --system --quiet plinth
+	adduser --system --quiet --ingroup plinth --no-create-home plinth
+	chown -R plinth: /var/lib/plinth /var/log/plinth
 	;;
 esac
 

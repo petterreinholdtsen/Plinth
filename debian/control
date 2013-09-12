@@ -15,6 +15,7 @@ Package: plinth
 Section: python
 Architecture: all
 Depends: ${python:Depends}, ${misc:Depends},
+ adduser,
  python-withsqlite, python-exmachina,
  augeas-tools,
 # FIXME: isn't python-simplejson now part of python?

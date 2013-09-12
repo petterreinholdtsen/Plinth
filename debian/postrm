@@ -4,6 +4,8 @@ set -e
 
 case "$1" in
 purge)
+	deluser --system --quiet plinth || true
+	delgroup --only-if-empty plinth
 	rm -rf /var/log/plinth /var/lib/plinth
 	;;
 esac

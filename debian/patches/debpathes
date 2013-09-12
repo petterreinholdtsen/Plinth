@@ -1,9 +1,11 @@
 Author: Tzafrir Cohen <tzafrir@debian.org>
 Description: Pathes that match Debian packaging
 
---- a/share/init.d/plinth
-+++ b/share/init.d/plinth
-@@ -11,8 +11,8 @@
+Index: Plinth/share/init.d/plinth
+===================================================================
+--- Plinth.orig/share/init.d/plinth	2013-09-12 07:56:28.170350493 +0200
++++ Plinth/share/init.d/plinth	2013-09-12 08:02:51.451105911 +0200
+@@ -12,13 +12,13 @@
  ### END INIT INFO
  
  # This file is /etc/init.d/plinth
@@ -14,3 +16,10 @@ Description: Pathes that match Debian packaging
  PID_FILE=/var/run/plinth.pid
  EXMACHINA_PID_FILE=/var/run/exmachina.pid
  
+-PLINTH_USER=www-data
+-PLINTH_GROUP=www-data
++PLINTH_USER=plinth
++PLINTH_GROUP=plinth
+ 
+ test -x $DAEMON || exit 0
+ test -x $EXMACHINA_DAEMON || exit 0
