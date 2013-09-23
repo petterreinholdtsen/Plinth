@@ -1,0 +1,199 @@
+#!/bin/sh
+
+tor_contactemail=root@localhost
+outsideif=$(ip -o link |grep -v LOOP|sort|head -1|awk -F'[ :]*' '{print $2}')
+outsideip=$(ip -o addr show dev $outsideif |awk -F'[ /]*' '/inet / { print $4}')
+insideif=wlan0
+
+if service tor status > /dev/null 2>&1 ; then
+    tor_enable=true
+else
+    tor_enable=false
+fi
+tor_enable_cur=$tor_enable
+export tor_enable
+
+if grep -q '^ORPort ' /etc/tor/torrc ; then
+    tor_relay=true
+else
+    tor_relay=false
+fi
+tor_relay_cur=$tor_relay
+export tor_relay
+
+# TODO Figure out how to set tor_dns_cur
+
+installdeps() {
+    apt-get install -y tor iptables-persistent
+}
+
+enable_tor() {
+    # enable tor logging
+    touch /var/log/tor/notices.log
+    chown debian-tor /var/log/tor/notices.log
+    chmod 644 /var/log/tor/notices.log
+
+    cat > /etc/tor/torrc <<onion_pi_configuration
+# v0.2
+Log notice file /var/log/tor/notices.log
+VirtualAddrNetwork 10.192.0.0/10
+AutomapHostsSuffixes .onion,.exit
+AutomapHostsOnResolve 1
+TransPort 9040
+TransListenAddress $outsideip
+DNSPort 9053
+DNSListenAddress $outsideip
+SocksPort 9050
+ClientOnly 1
+Exitpolicy reject *:*
+ContactInfo $tor_contactemail
+onion_pi_configuration
+
+    if $tor_relay ; then
+	cat >> /etc/tor/torrc <<onion_pi_configuration
+ORPort auto
+onion_pi_configuration
+    fi
+    update-rc.d tor enable
+    service tor start
+}
+
+disable_tor() {
+    service tor stop
+    update-rc.d tor disable
+}
+
+disabled() {
+    disable_tor
+
+    # set up NAT
+    if [ "$insideif" ] ; then
+	iptables -F
+	iptables -t nat -F
+
+	iptables -A FORWARD -i $outsideif -o $insideif \
+	    -m state --state ESTABLISHED,RELATED -j ACCEPT
+	iptables -A FORWARD -i $insideif -o $outsideif -j ACCEPT
+	iptables -t nat -A POSTROUTING -o $outsideif -j MASQUERADE
+    fi
+}
+
+encrypted() {
+    installdeps
+    enable_tor
+    if [ "$insideif" ] ; then
+	:
+    fi
+}
+
+alltcp() {
+    installdeps
+    enable_tor
+
+    if [ "$insideif" ] ; then
+        # Set up redirection of all TCP connections to TOR using iptables
+	iptables -F
+	iptables -t nat -F
+
+        # Make it possible to ssh into the box
+	iptables -t nat -A PREROUTING -i $insideif -p tcp --dport 22 -j REDIRECT --to-ports 22
+
+        # Redirect DNS traffic from the NATed network to Tor
+	iptables -t nat -A PREROUTING -i $insideif -p udp --dport 53 -j REDIRECT --to-ports 53
+
+        # Redirect all TCP traffic from the NAT-ed network to Tor
+	iptables -t nat -A PREROUTING -i $insideif -p tcp --syn -j REDIRECT --to-ports 9040
+
+        # Save the tables
+	service iptables-persistent save
+    fi
+}
+
+while [ "$1" ] ; do 
+    arg="$1"
+    shift
+    case "$arg" in
+	enable|noenable) # Not using disable for consistency with other options
+	    if [ 'enable' = "$arg" ] ; then
+		tor_enable=true
+	    else
+		tor_enable=false
+	    fi
+	    export tor_enable
+	    ;;
+	relay|norelay)
+	    if [ 'relay' = "$arg" ] ; then
+		tor_relay=true
+	    else
+		tor_relay=false
+	    fi
+	    export tor_relay
+	    ;;
+	# exitnode|noexitnode)
+	#     if [ 'exitnode' = "$arg" ] ; then
+	# 	tor_exitnode=true
+	#     else
+	# 	tor_exitnode=false
+	#     fi
+	#     export tor_exitnode
+	#     ;;
+	dns|nodns)
+	    if [ 'dns' = "$arg" ] ; then
+		tor_dns=true
+	    else
+		tor_dns=false
+	    fi
+	    export tor_dns
+	    ;;
+	contactemail)
+	    tor_contactemail="$1"
+	    export tor_contactemail
+	    shift
+	    ;;
+	disabled|encrypted|alltcp):
+	    tor_filter="$arg"
+	    export tor_filter
+	    echo "$setup" > /tmp/tor-setup
+#	    $setup
+	    ;;
+	status)
+	    printstatus() {
+		if $2 ; then
+		    echo $1
+		else
+		    echo no$1
+		fi
+	    }
+	    printstatus enable $tor_enable_cur
+	    printstatus relay $tor_relay_cur
+	    printstatus dns $tor_dns_cur
+	    exit 0
+	    ;;
+	*)
+	    ;;
+    esac
+done
+
+env | grep tor
+
+# Now we know what to do.  Lets update the configuration
+if [ $tor_enable != $tor_enable_cur ] ||
+    [ $tor_relay_cur != $tor_relay ]; then
+    if $tor_enable ; then
+	enable_tor
+    else
+	disable_tor
+    fi
+fi
+
+if ! $tor_enable ; then
+    exit 0
+fi
+
+if [ $tor_dns != $tor_dns_cur ] ; then
+    if $tor_dns ; then
+	dnsmasq_dns_tor_enable
+    else
+	dnsmasq_dns_tor_disable
+    fi
+fi
