@@ -24,7 +24,7 @@ export tor_relay
 # TODO Figure out how to set tor_dns_cur
 
 installdeps() {
-    apt-get install -y tor iptables-persistent
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tor iptables-persistent
 }
 
 enable_tor() {
