@@ -180,6 +180,7 @@ env | grep tor
 if [ $tor_enable != $tor_enable_cur ] ||
     [ $tor_relay_cur != $tor_relay ]; then
     if $tor_enable ; then
+	installdeps
 	enable_tor
     else
 	disable_tor
