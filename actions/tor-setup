@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 tor_contactemail=root@localhost
 outsideif=$(ip -o link |grep -v LOOP|sort|head -1|awk -F'[ :]*' '{print $2}')
 outsideip=$(ip -o addr show dev $outsideif |awk -F'[ /]*' '/inet / { print $4}')
@@ -13,7 +15,7 @@ fi
 tor_enable_cur=$tor_enable
 export tor_enable
 
-if grep -q '^ORPort ' /etc/tor/torrc ; then
+if [ -e /etc/tor/torrc ] && grep -q '^ORPort ' /etc/tor/torrc ; then
     tor_relay=true
 else
     tor_relay=false
@@ -23,8 +25,12 @@ export tor_relay
 
 # TODO Figure out how to set tor_dns_cur
 
-installdeps() {
-    DEBIAN_FRONTEND=noninteractive apt-get install -y tor iptables-persistent
+installdebs() {
+    cat <<EOF | debconf-set-selections
+iptables-persistent     iptables-persistent/autosave_v6 boolean false
+iptables-persistent     iptables-persistent/autosave_v4 boolean false
+EOF
+    DEBIAN_FRONTEND=noninteractive apt-get install -y tor iptables-persistent 2>&1 | logger -t owncloud-setup
 }
 
 enable_tor() {
@@ -79,7 +85,7 @@ disabled() {
 }
 
 encrypted() {
-    installdeps
+    installdebs
     enable_tor
     if [ "$insideif" ] ; then
 	:
@@ -87,7 +93,7 @@ encrypted() {
 }
 
 alltcp() {
-    installdeps
+    installdebs
     enable_tor
 
     if [ "$insideif" ] ; then
@@ -180,7 +186,7 @@ env | grep tor
 if [ $tor_enable != $tor_enable_cur ] ||
     [ $tor_relay_cur != $tor_relay ]; then
     if $tor_enable ; then
-	installdeps
+	installdebs
 	enable_tor
     else
 	disable_tor
