@@ -28,6 +28,8 @@ __maintainer__ = "James Vasile"
 __email__ = "james@jamesvasile.com"
 __status__ = "Development"
 
+import urlparse
+
 def error_page(status, dynamic_msg, stock_msg):
    return u.page_template(template="err", title=status, main="<p>%s</p>%s" % (dynamic_msg, stock_msg))
 
@@ -55,14 +57,14 @@ class Root(plugin_mount.PagePlugin):
       ## TODO: firstboot hijacking root should probably be in the firstboot module with a hook in plinth.py
       with sqlite_db(cfg.store_file, table="firstboot") as db:
          if not 'state' in db:
-            raise cherrypy.InternalRedirect('/firstboot')
+            raise cherrypy.InternalRedirect('firstboot')
          elif db['state'] < 5:
             cfg.log("First Boot state = %d" % db['state'])
-            raise cherrypy.InternalRedirect('/firstboot/state%d' % db['state'])
+            raise cherrypy.InternalRedirect('firstboot/state%d' % db['state'])
       if cherrypy.session.get(cfg.session_key, None):
-         raise cherrypy.InternalRedirect('/router')
+         raise cherrypy.InternalRedirect('router')
       else:
-         raise cherrypy.InternalRedirect('/help/about')
+         raise cherrypy.InternalRedirect('help/about')
 
 def load_modules():
    """Import all the symlinked .py files in the modules directory and
@@ -81,20 +83,41 @@ def load_modules():
 
 def parse_arguments():
    parser = argparse.ArgumentParser(description='Plinth web interface for the FreedomBox.')
-   parser.add_argument('--pidfile', default="",
+   parser.add_argument('--pidfile',
                        help='specify a file in which the server may write its pid')
+   # FIXME make this work with basehref for static files.
+   parser.add_argument('--server_dir',
+                       help='specify where to host the server.')
+
    args=parser.parse_args()
-   if args.pidfile:
-      cfg.pidfile = args.pidfile
-   else:
+   set_config(args, "pidfile", "plinth.pid")
+   set_config(args, "server_dir", "/")
+
+   return cfg
+
+def set_config(args, element, default):
+   """Sets *cfg* elements based on *args* values, or uses a reasonable default.
+
+   - If values are passed in from *args*, use those.
+   - If values are read from the config file, use those.
+   - If no values have been given, use default.
+
+   """
+   try:
+      # cfg.(element) = args.(element)
+      setattr(cfg, element, getattr(args, element))
+   except AttributeError:
+      # if it fails, we didn't receive that argument.
       try:
-         if not cfg.pidfile:
-            cfg.pidfile = "plinth.pid"
+         # if not cfg.(element): cfg.(element) = default
+         if not getattr(cfg, element):
+            setattr(cfg, element, default)
       except AttributeError:
-            cfg.pidfile = "plinth.pid"
+         # it wasn't in the config file, but set the default anyway.
+         setattr(cfg, element, default)
 
 def setup():
-   parse_arguments()
+   cfg = parse_arguments()
 
    try:
       if cfg.pidfile:
@@ -140,13 +163,11 @@ def setup():
       '/favicon.ico':{'tools.staticfile.on': True,
                       'tools.staticfile.filename':
                          "%s/static/theme/favicon.ico" % cfg.file_root}}
-   cherrypy.tree.mount(cfg.html_root, '/', config=config)
+   cherrypy.tree.mount(cfg.html_root, cfg.server_dir, config=config)
    cherrypy.engine.signal_handler.subscribe()
-
 
 def main():
    setup()
-   print "%s %d" % (cfg.host, cfg.port)
 
    cherrypy.engine.start()
    cherrypy.engine.block()

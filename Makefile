@@ -22,7 +22,7 @@ predepend:
 	git submodule update
 	touch predepend
 
-install: default
+install: default apache-install freedombox-setup-install
 	mkdir -p $(DESTDIR)/etc/init.d $(DESTDIR)/etc/plinth
 	cp plinth.sample.fhs.config $(DESTDIR)/etc/plinth/plinth.config
 	mkdir -p $(DESTDIR)$(PYDIR) $(DESTDIR)$(DATADIR) $(DESTDIR)/usr/bin \
@@ -36,6 +36,9 @@ install: default
 	mkdir -p $(DESTDIR)/var/lib/plinth/cherrypy_sessions $(DESTDIR)/var/log/plinth $(DESTDIR)/var/run
 	cp -r data/* $(DESTDIR)/var/lib/plinth
 	rm -f $(DESTDIR)/var/lib/plinth/users/sqlite3.distrib
+
+freedombox-setup-install:
+	install -m755 -D setup.d/86_plinth $(DESTDIR)/usr/lib/freedombox/setup.d/86_plinth
 
 uninstall:
 	rm -rf $(DESTDIR)/usr/lib/python2.7/plinth $(DESTDIR)/usr/share/plinth/ \
@@ -80,6 +83,7 @@ clean:
 	@find . -name "*.bak" -exec rm {} \;
 	@$(MAKE) -s -C doc clean
 	@$(MAKE) -s -C templates clean
+	rm -f plinth.config
 	rm -f predepend
 
 hosting:
@@ -91,3 +95,17 @@ current-checkout.tar.gz: $(ALL_BUT_GZ)
 
 current-repository.tar.gz: $(ALL_BUT_GZ)
 	tar cz $(EXCLUDE) * .git > current-repository.tar.gz
+
+apache-install:
+	install -D -m644 share/apache2/plinth.conf $(DESTDIR)/etc/apache2/sites-available/plinth.conf
+apache-config: apache-install apache-ssl
+	a2ensite plinth
+	service apache2 reload
+
+apache-ssl:
+	make-ssl-cert generate-default-snakeoil
+	a2enmod ssl
+	a2enmod rewrite
+	a2enmod proxy
+	a2enmod proxy_http
+	service apache2 restart
