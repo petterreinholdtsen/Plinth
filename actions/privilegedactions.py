@@ -82,6 +82,7 @@ def privilegedaction_run(action, options = None):
 
     """
     DIRECTORY = "actions"
+    POSTFIX   = "-action"
 
     # contract 3A and 3B: don't call anything outside of the actions directory.
     if os.sep in action:
@@ -93,7 +94,7 @@ def privilegedaction_run(action, options = None):
     action = pipes.quote(action)
     options = pipes.quote(options)
 
-    cmd = DIRECTORY + os.sep + action
+    cmd = DIRECTORY + os.sep + action + POSTFIX
 
     # contract 3C: interpret shell escape sequences as literal file names.
     # contract 3E: fail if the action doesn't exist or exists elsewhere.

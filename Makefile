@@ -28,7 +28,10 @@ install: default apache-install freedombox-setup-install
 	mkdir -p $(DESTDIR)$(PYDIR) $(DESTDIR)$(DATADIR) $(DESTDIR)/usr/bin \
 		$(DESTDIR)/usr/share/doc/plinth $(DESTDIR)/usr/share/man/man1
 	cp -a static themes $(DESTDIR)$(DATADIR)/
-	cp -a actions $(DESTDIR)$(DATADIR)/
+	mkdir -p $(DESTDIR)$(DATADIR)/actions
+	cp -a actions/*-action $(DESTDIR)$(DATADIR)/actions/.
+	mkdir -p $(DESTDIR)$(PYDIR)/actions
+	cp -a actions/*.py $(DESTDIR)$(PYDIR)/actions/
 	cp -a sudoers.d $(DESTDIR)/etc/sudoers.d
 	cp -a *.py modules templates $(DESTDIR)$(PYDIR)/
 	cp share/init.d/plinth $(DESTDIR)/etc/init.d
